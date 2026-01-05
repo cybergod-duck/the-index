@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/go/partner",
+      "destination": "https://monday.com", 
+      "permanent": false
+    }
+  ]
+}
