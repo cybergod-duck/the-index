@@ -27,4 +27,4 @@ Allow: /
 User-agent: CCBot
 Allow: /
 
-Sitemap: https://the-index.vercel.app/sitemap.xml
+Sitemap: https://crmindex.net/sitemap.xml
