@@ -29,6 +29,9 @@ STATE_FILE = BASE_DIR / 'posted_state.json'
 PROFILE_DIR = BASE_DIR / 'chrome_profile_final'
 PIN_DIR = BASE_DIR / 'premium_pins'
 
+# Import the batch generator so we can refill the queue after posting
+from premium_pin_generator import generate_batch
+
 def load_state():
     if STATE_FILE.exists():
         with open(STATE_FILE, 'r') as f:
@@ -63,8 +66,8 @@ def post_pin_flawless(driver, row, progress, task_id):
     description = f"Stop struggling with {pain}. See the full review on THE INDEX. #CRM #Software #{industry.replace(' ', '')}"
     link = f"https://crmindex.net/{slug}/"
     image_path = PIN_DIR / f"pin-{slug}.png"
-    
     if not image_path.exists(): 
+        console.print(f"[red]Image missing for {slug}. Skipping until next batch generation.[/red]")
         return False
 
     try:
@@ -81,8 +84,18 @@ def post_pin_flawless(driver, row, progress, task_id):
 
         # 2. TITLE
         progress.update(task_id, description=f"[bold blue]Filling Title:[/] {slug}")
-        t_el = wait.until(EC.element_to_be_clickable((By.XPATH, "//*[contains(@id, 'pin-draft-title-')] | //textarea[contains(@placeholder, 'title')]")))
-        t_el.click()
+        # Pinterest frequently changes this DOM element. Use a broader approach.
+        t_xpath = "//textarea[@id='storyboard-selector-title'] | //textarea[contains(@placeholder, 'Add a title')] | //*[contains(@id, 'pin-draft-title-')] | //textarea[contains(@placeholder, 'title')]"
+        try:
+            t_el = wait.until(EC.presence_of_element_located((By.XPATH, t_xpath)))
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", t_el)
+            time.sleep(1)
+            t_el.click()
+        except:
+            # Fallback if strict click fails
+            t_el = driver.find_element(By.XPATH, t_xpath)
+            driver.execute_script("arguments[0].click();", t_el)
+            
         t_el.send_keys(Keys.CONTROL + "a")
         t_el.send_keys(Keys.BACKSPACE)
         t_el.send_keys(title)
@@ -100,8 +113,14 @@ def post_pin_flawless(driver, row, progress, task_id):
         # 4. URL
         progress.update(task_id, description=f"[bold blue]Filling URL:[/] {slug}")
         l_xpath = "//*[contains(@id, 'pin-draft-link-')] | //textarea[contains(@placeholder, 'link')]"
-        l_el = wait.until(EC.element_to_be_clickable((By.XPATH, l_xpath)))
-        l_el.click()
+        l_el = wait.until(EC.presence_of_element_located((By.XPATH, l_xpath)))
+        try:
+            l_el.click()
+        except:
+            driver.execute_script("arguments[0].click();", l_el)
+            
+        l_el.send_keys(Keys.CONTROL + "a")
+        l_el.send_keys(Keys.BACKSPACE)
         l_el.send_keys(link)
         time.sleep(3)
 
@@ -138,7 +157,20 @@ def post_pin_flawless(driver, row, progress, task_id):
         return True
 
     except Exception as e:
-        driver.save_screenshot(str(BASE_DIR / f"fail-{slug}.png"))
+        console.print(f"[red]Error processing {slug}: {str(e)[:100]}[/red]")
+        try:
+            # Wrap screenshot in try/except so a dead tab doesn't kill the batch
+            driver.save_screenshot(str(BASE_DIR / f"fail-{slug}.png"))
+        except:
+            pass
+        
+        # Force a refresh to reset the DOM for the next iteration if we failed
+        try:
+            driver.get("https://www.pinterest.com/pin-builder/")
+            time.sleep(5)
+        except:
+            pass
+            
         return False
 
 def main():
@@ -185,6 +217,10 @@ def main():
                     console.print(f" [bold red]❌ FAILED:[/] {slug}")
         finally:
             driver.quit()
+            
+        # Refill the pin queue automatically so there are always graphics ready for the next execution
+        console.print("\n[bold cyan]--- INITIATING BACKGROUND PIN BATCH-GENERATION ---[/bold cyan]")
+        generate_batch(150)
 
 if __name__ == "__main__":
     main()
