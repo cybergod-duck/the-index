@@ -260,7 +260,7 @@ Sitemap: https://www.crmindex.net/sitemap.xml
             slug = match.group(1)
             urls.append(f"<url><loc>https://www.crmindex.net/{slug}/</loc><lastmod>{DATE_NOW}</lastmod><priority>0.8</priority></url>")
             
-    sitemap_xml = f'<?xml version="1.0" encoding="UTF-8"?>\\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\\n' + "\\n".join(urls) + '\\n</urlset>'
+    sitemap_xml = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "\n".join(urls) + '\n</urlset>'
     with open(os.path.join(OUTPUT_DIR, 'sitemap.xml'), 'w', encoding='utf-8') as f:
         f.write(sitemap_xml)
         
