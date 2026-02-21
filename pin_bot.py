@@ -1,6 +1,7 @@
 import time
-import json
 import csv
+import json
+import os
 from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -11,94 +12,51 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-# ⚡ CONFIGURATION ⚡
+# --- CONFIGURATION ---
 BASE_DIR = Path(r'C:\Projects\the-index')
 CSV_FILE = BASE_DIR / 'data.csv'
 STATE_FILE = BASE_DIR / 'posted_state.json'
 PIN_DIR = BASE_DIR / 'premium_pins'
-PROFILE_DIR = BASE_DIR / 'chrome_profile_final'  # Fresh profile to avoid ALL ghosts
-
-def load_data():
-    data = {}
-    with CSV_FILE.open(newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            data[row['slug']] = row
-    return data
+PROFILE_DIR = BASE_DIR / 'chrome_profile_final'
 
 def load_state():
     if STATE_FILE.exists():
-        with STATE_FILE.open('r') as f:
+        with open(STATE_FILE, 'r') as f:
             return json.load(f)
     return {"posted": [], "remaining": []}
 
 def save_state(state):
-    with STATE_FILE.open('w') as f:
+    with open(STATE_FILE, 'w') as f:
         json.dump(state, f, indent=4)
 
-def setup_driver():
-    print(f"🛠️ Initializing Chrome. Profile: {PROFILE_DIR}")
-    chrome_options = Options()
-    # 🛡️ Persistent Profile for Login Persistence
-    chrome_options.add_argument(f"--user-data-dir={PROFILE_DIR}")
-    chrome_options.add_argument("--profile-directory=Default")
-    # Stealth
-    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option('useAutomationExtension', False)
-    chrome_options.add_argument("--start-maximized")
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    # Hide automation footprint
-    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
-        "source": "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-    })
-    return driver
-
-def dismiss_modals(driver, max_attempts=5):
-    """Aggressively tries to dismiss various Pinterest popups."""
-    # Try hitting escape first
-    try:
-        webdriver.ActionChains(driver).send_keys(Keys.ESCAPE).perform()
-        time.sleep(1)
-    except Exception:
-        pass
-    modal_selectors = [
-        "//button[@aria-label='Close']",
-        "//div[@role='dialog']//button",
-        "//button[contains(., 'Next')]",
+def dismiss_modals(driver):
+    """Try to click 'close' or 'not now' on any overlays."""
+    selectors = [
+        "//button[contains(., 'Not now')]",
         "//button[contains(., 'Got it')]",
-        "//button[contains(., 'Skip')]",
-        "//button[contains(., 'Dismiss')]",
-        "//button[contains(., 'Take Tour')]",
-        "//div[contains(@class, 'modal')]//button",
-        "//*[@aria-label='Close']"
+        "//div[@role='button'][contains(., 'Close')]",
+        "//button[@aria-label='Close modal']"
     ]
-    for attempt in range(max_attempts):
-        found_any = False
-        for selector in modal_selectors:
-            try:
-                elements = driver.find_elements(By.XPATH, selector)
-                for el in elements:
-                    if el.is_displayed():
-                        print(f" 👋 Dismissing popup element ({attempt+1})...")
-                        driver.execute_script("arguments[0].click();", el)
-                        time.sleep(1.5)
-                        found_any = True
-            except Exception:
-                pass
-        if not found_any:
-            break
+    for sel in selectors:
+        try:
+            btns = driver.find_elements(By.XPATH, sel)
+            for b in btns:
+                if b.is_displayed():
+                    b.click()
+                    print(f" ✖️ Modal dismissed: {sel}")
+        except:
+            pass
 
-def post_pin(driver, slug, row):
-    print(f"\n⚡ Preparing Pin: {slug}")
-    image_path = PIN_DIR / f"pin-{slug}.png"
-    if not image_path.exists():
-        print(f" ⚠️ Skipping: Image not found at {image_path}")
-        return False
+def post_pin(driver, row):
     industry = row['industry'].strip()
     pain = row['pain_point'].strip()
-    # 🏷️ Optimized for Discoverability
+    slug = row['slug'].strip()
+    image_path = PIN_DIR / f"pin-{slug}.png"
+    
+    if not image_path.exists():
+        print(f" ❌ Missing image: {image_path}")
+        return False
+
     hashtag_industry = industry.replace(" ", "")
     hashtags = f" #CRM #{hashtag_industry} #Software #BusinessAutomation"
     title = f"Best CRM for {industry} ({time.strftime('%Y')})"
@@ -106,218 +64,152 @@ def post_pin(driver, slug, row):
         title += f" #{hashtag_industry}"
     description = f"Stop struggling with {pain}. We compared the top software solutions for {industry}. See the full review on THE INDEX.{hashtags}"
     link = f"https://crmindex.net/{slug}/"
+
     try:
         driver.get("https://www.pinterest.com/pin-builder/")
-        wait = WebDriverWait(driver, 15)
-        # 1. Dismiss Modals
+        wait = WebDriverWait(driver, 30)
+        
+        print(" ⏳ Waiting for page load...")
+        time.sleep(12) 
         dismiss_modals(driver)
-        # 2. Upload
-        file_input = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@type='file']")))
-        file_input.send_keys(str(image_path))
-        print(" ✅ Image Hooked")
-        # Dismiss any modals that appeared AFTER upload
-        dismiss_modals(driver)
-        # 3. Text Content
-        print(" 🖋️ Entering metadata...")
-        # Title
-        title_box = wait.until(EC.presence_of_element_located((By.XPATH,
-            "//input[contains(@placeholder, 'Add your title')] | "
-            "//textarea[contains(@placeholder, 'Add your title')] | "
-            "//div[@role='textbox' and @aria-label='Title'] | "
-            "//*[@data-test-id='pin-builder-draft-title'] |"
-            "//h1[contains(@aria-label, 'Title')]//following-sibling::div//div[@role='textbox']"
-        )))
-        title_box.clear()
-        title_box.send_keys(title)
-        # Description
-        desc_box = wait.until(EC.presence_of_element_located((By.XPATH,
-            "//div[@role='textbox' and contains(., 'Tell everyone')] | "
-            "//div[@role='textbox' and contains(@aria-placeholder, 'description')] | "
-            "//div[@role='textbox' and contains(@aria-label, 'description')] | "
-            "//textarea[contains(@placeholder, 'description')] | "
-            "//div[contains(@aria-placeholder, 'description')] |"
-            "//div[contains(@class, 'public-DraftEditor-content')] [not(contains(@aria-label, 'Title'))]"
-        )))
-        desc_box.send_keys(description)
-        # Link
-        print(" 🔗 Entering link (Surgical Mode)...")
-        link_entered = False
-        try:
-            # 1. Broad search for anything matching 'link'
-            triggers = [
-                "//input[contains(@placeholder, 'link')]",
-                "//*[text()='Add a destination link']",
-                "//div[contains(@aria-placeholder, 'link')]",
-                "//input[@id='link-input']"
-            ]
-            
-            target = None
-            for sel in triggers:
-                els = driver.find_elements(By.XPATH, sel)
-                if els and els[0].is_displayed():
-                    target = els[0]
-                    break
-            
-            if target:
-                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", target)
-                time.sleep(1)
-                driver.execute_script("arguments[0].click();", target)
-                time.sleep(2) # Wait for it to turn into an input
-                
-                # Now find the actual input
-                final_input = driver.execute_script("""
-                    var active = document.activeElement;
-                    if (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA') return active;
-                    
-                    var inputs = document.querySelectorAll('input');
-                    for (var inp of inputs) {
-                        if (inp.placeholder && inp.placeholder.toLowerCase().includes('link')) return inp;
-                        if (inp.value === '') return inp; // Often the link is the only empty input left
-                    }
-                    return null;
-                """)
-                
-                if final_input:
-                    driver.execute_script("""
-                        function setNativeValue(element, value) {
-                            const { set: valueSetter } = Object.getOwnPropertyDescriptor(element, 'value') || {};
-                            const prototype = Object.getPrototypeOf(element);
-                            const { set: prototypeValueSetter } = Object.getOwnPropertyDescriptor(prototype, 'value') || {};
-                            if (prototypeValueSetter && prototypeValueSetter !== valueSetter) {
-                                prototypeValueSetter.call(element, value);
-                            } else if (valueSetter) {
-                                valueSetter.call(element, value);
-                            } else {
-                                element.value = value;
-                            }
-                        }
-                        setNativeValue(arguments[0], arguments[1]);
-                        arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
-                        arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
-                        arguments[0].dispatchEvent(new Event('blur', { bubbles: true }));
-                    """, final_input, link)
-                    print(" ✅ Link injected via Surgical JS")
-                    link_entered = True
-        except Exception as e:
-            print(f" ⚠️ Surgical link failure: {e}")
 
-        if not link_entered:
-            print(" ⌨️ Final Tab Fallback...")
+        # Helper for stable value setting
+        def set_val_js(xpath, val):
             try:
-                desc_box.click()
-                time.sleep(1)
-                webdriver.ActionChains(driver).send_keys(Keys.TAB).send_keys(Keys.TAB).send_keys(link).send_keys(Keys.ENTER).perform()
-                time.sleep(1)
-            except: pass
+                el = driver.find_element(By.XPATH, xpath)
+                driver.execute_script("""
+                    var el = arguments[0];
+                    var val = arguments[1];
+                    el.focus();
+                    var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value') || 
+                                 Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value');
+                    if (setter && setter.set) {
+                        setter.set.call(el, val);
+                    } else {
+                        el.value = val;
+                    }
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                """, el, val)
+                return True
+            except:
+                return False
 
-        print(" ✅ Metadata Entry Phase Complete")
-
-        # 4. Board Selection
-        print(" 🖱️ Selecting board...")
+        # 1. Title
+        print(" 🖋️ Title...")
+        title_xpath = "//*[contains(@placeholder, 'title')] | //*[@data-test-id='pin-builder-draft-title']"
+        if not set_val_js(title_xpath, title):
+            t_box = wait.until(EC.element_to_be_clickable((By.XPATH, title_xpath)))
+            t_box.send_keys(title)
+        
+        # 2. Description
+        print(" 🖋️ Description...")
+        desc_xpath = "//div[@role='textbox'] | //textarea[contains(@placeholder, 'Pin')] | //div[contains(@class, 'DraftEditor')]"
         try:
-            board_btn = None
-            board_selectors = [
-                "//*[@data-test-id='board-dropdown-select-button']",
-                "//button[contains(., 'Business')]",
-                "//button[contains(., 'Select board')]",
-                "//button[contains(@aria-label, 'board')]"
-            ]
-            for sel in board_selectors:
-                els = driver.find_elements(By.XPATH, sel)
-                if els and els[0].is_displayed():
-                    board_btn = els[0]
-                    break
+            d_box = driver.find_element(By.XPATH, desc_xpath)
+            d_box.click()
+            d_box.send_keys(description)
+        except:
+            set_val_js(desc_xpath, description)
             
-            if board_btn:
-                driver.execute_script("arguments[0].click();", board_btn)
-                time.sleep(2)
-                first = wait.until(EC.element_to_be_clickable((By.XPATH, 
-                    "//div[@data-test-id='board-row'] | //div[@role='listitem'] | //div[contains(@class, 'boardRow')]"
-                )))
-                first.click()
-                print(" ✅ Board Selected")
-        except Exception as e:
-            print(f" ℹ️ Board selection skip: {e}")
+        # 3. Destination Link (Dynamic ID)
+        print(" 🔗 Link...")
+        link_xpath = "//*[starts-with(@id, 'pin-draft-link-')] | //input[@type='url']"
+        if not set_val_js(link_xpath, link):
+            try:
+                l_input = wait.until(EC.presence_of_element_located((By.XPATH, link_xpath)))
+                l_input.send_keys(link)
+            except:
+                # If it's a button we need to click first
+                btn_xpath = "//button[contains(., 'Add a destination link')]"
+                try:
+                    driver.find_element(By.XPATH, btn_xpath).click()
+                    time.sleep(2)
+                    set_val_js(link_xpath, link)
+                except:
+                    pass
+            
+        time.sleep(2)
 
-        # 5. Final Publish
-        print(" ⏳ Finalizing for Publish...")
-        time.sleep(5)
-        
-        publish_btn = None
-        publish_selectors = [
-            "//button[contains(normalize-space(), 'Publish')]",
-            "//div[text()='Publish']/parent::button",
-            "//button[@data-test-id='board-dropdown-save-button']",
-            "//button[contains(@class, 'next')]", # Sometimes 'Next' in some views
-            "//div[@role='button'][contains(., 'Publish')]"
-        ]
-        for sel in publish_selectors:
-            els = driver.find_elements(By.XPATH, sel)
-            if els and els[0].is_displayed():
-                publish_btn = els[0]
-                break
-        
-        if publish_btn:
-            print(f" 🚀 Clicking Publish Button...")
-            driver.execute_script("arguments[0].click();", publish_btn)
-            print(" ✅ Publish Command Sent")
-            time.sleep(12) 
-            return True
-        else:
-            raise Exception("Publish button not found")
-    except Exception as e:
-        print(f" ❌ Flow Interrupted: {e}")
+        # 4. Upload Image
+        print(" 📤 Image...")
+        file_input = driver.find_element(By.XPATH, "//input[@type='file']")
+        file_input.send_keys(str(image_path))
+        time.sleep(10)
+
+        # 5. Select Board
+        print(" 🖱️ Board...")
         try:
-            error_img = BASE_DIR / f"error-{slug}.png"
-            driver.save_screenshot(str(error_img))
-            print(f" 📸 Screenshot saved to {error_img}")
-        except Exception:
-            pass
+            board_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//*[@data-test-id='board-dropdown-select-button'] | //button[contains(., 'Select')]")))
+            driver.execute_script("arguments[0].click();", board_btn)
+            time.sleep(2)
+            first_board = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@data-test-id='board-row'] | //div[@role='listitem']")))
+            first_board.click()
+            print(" ✅ Board Selected")
+        except:
+            print(" ℹ️ Board skip")
+
+        # 6. Final Publish
+        print(" 🚀 Publishing...")
+        publish_xpath = "//button[@data-test-id='board-dropdown-save-button'] | //button[contains(., 'Publish')]"
+        publish_btn = wait.until(EC.element_to_be_clickable((By.XPATH, publish_xpath)))
+        driver.execute_script("arguments[0].click();", publish_btn)
+        print(" ✅ Published!")
+        time.sleep(15)
+        return True
+
+    except Exception as e:
+        print(f" ❌ Failed: {e}")
+        driver.save_screenshot(str(BASE_DIR / f"error-{slug}.png"))
         return False
 
 def main():
     state = load_state()
-    data = load_data()
-    if not state["remaining"]:
-        state["remaining"] = list(data.keys())
-        save_state(state)
-    if not state["remaining"]:
-        print("🎉 All caught up!")
+    posted_slugs = state.get("posted", [])
+    
+    # Load data
+    all_data = []
+    with CSV_FILE.open(newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            all_data.append(row)
+            
+    # Find next items (limit 15 per day)
+    to_post = [row for row in all_data if row['slug'] not in posted_slugs][:15]
+    
+    if not to_post:
+        print(" 🎉 No pins left to post!")
         return
-    driver = setup_driver()
-    
-    # 🔓 Automatic Login Detection
-    print("🌐 Checking login status...")
-    driver.get("https://www.pinterest.com/pin-builder/")
-    time.sleep(8)
-    
-    if "login" in driver.current_url.lower():
-        print("\n" + "="*60)
-        print("� LOGIN REQUIRED: Please log in in the opened Chrome window.")
-        print("   The profile will save your session for future automated runs.")
-        print("="*60 + "\n")
-        input("👉 Press [ENTER] here once you are logged in and seeing the Pin Builder page...")
-    else:
-        print("✅ Active session detected. Proceeding to batch...")
 
-    batch = state["remaining"][:15]
-    posted = []
-    for slug in batch:
-        if post_pin(driver, slug, data.get(slug)):
-            posted.append(slug)
-            print(f"--- Processed {len(posted)}/15 ---")
-        else:
-            print("🛑 Error detected. Pausing/Stopping.")
-            break
-        print("💤 Cooling down (30s)...")
-        time.sleep(30)
-    # Sync
-    for s in posted:
-        state["remaining"].remove(s)
-        state["posted"].append(s)
-    save_state(state)
-    print(f"\n🏁 Finished! {len(posted)} pins posted. Total: {len(state['posted'])}")
-    driver.quit()
+    print(f" 🏁 Starting batch of {len(to_post)} pins...")
+    
+    # Init Chrome
+    chrome_options = Options()
+    chrome_options.add_argument(f"--user-data-dir={PROFILE_DIR}")
+    chrome_options.add_argument("--profile-directory=Default")
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    
+    try:
+        for row in to_post:
+            slug = row['slug']
+            print(f"\n⚡ Processing: {slug}")
+            if post_pin(driver, row):
+                if slug not in posted_slugs:
+                    posted_slugs.append(slug)
+                state["posted"] = posted_slugs
+                # Remove from remaining if present
+                if "remaining" in state and slug in state["remaining"]:
+                    state["remaining"].remove(slug)
+                save_state(state)
+                print(f" ✅ Success: {slug}")
+            else:
+                print(f" 🛑 Error detected. Skipping and pausing.")
+                time.sleep(5)
+                
+    finally:
+        print(f"\n🏁 Batch finished! Total posted: {len(posted_slugs)}")
+        driver.quit()
 
 if __name__ == "__main__":
     main()
