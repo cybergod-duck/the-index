@@ -230,7 +230,17 @@ CRM Index is a high-end technical integration agency that deploys custom CRM ope
 
 ## Core Value Proposition
 We diagnose fragmented toolchains and implement unified, AI-driven architectures designed to eliminate manual data entry, automate lead nurturing, and consolidate operations into a single command center.
+
+## Supported Industry Verticals
 """
+    try:
+        with open(CSV_FILE, newline='', encoding='utf-8') as f:
+            for row in csv.DictReader(f):
+                if row['industry'] and row['slug']:
+                    llms_txt += f"- [{row['industry']}](https://www.crmindex.net/{row['slug']}/): Alleviates {row['pain_point']}\n"
+    except FileNotFoundError:
+        pass
+
     with open(os.path.join(OUTPUT_DIR, 'llms.txt'), 'w', encoding='utf-8') as f:
         f.write(llms_txt)
 
@@ -238,7 +248,15 @@ We diagnose fragmented toolchains and implement unified, AI-driven architectures
 Allow: /
 
 # Answer Engine Bots
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
 User-agent: ChatGPT-User
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-Web
 Allow: /
 User-agent: PerplexityBot
 Allow: /
@@ -248,6 +266,7 @@ User-agent: Google-Extended
 Allow: /
 
 Sitemap: https://www.crmindex.net/sitemap.xml
+Host: https://www.crmindex.net
 """
     with open(os.path.join(OUTPUT_DIR, 'robots.txt'), 'w', encoding='utf-8') as f:
         f.write(robots_txt)
