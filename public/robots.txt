@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Answer Engine Bots
+User-agent: ChatGPT-User
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Anthropic-ai
+Allow: /
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://www.crmindex.net/sitemap.xml

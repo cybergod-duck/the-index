@@ -131,6 +131,7 @@ if __name__ == "__main__":
         os.makedirs(OUTPUT_DIR)
         
     print("--- STARTING PREMIUM FORGE ---")
+    print("Generating ALL pin images...")
     
     with open(CSV_FILE, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
@@ -139,7 +140,7 @@ if __name__ == "__main__":
             if row['industry']:
                 create_pin(row)
                 count += 1
-                if count >= 15: # Just generate 15 for now as a pilot
-                    break
+                if count % 50 == 0:
+                    print(f"Progress: {count} pins generated...")
                     
     print(f"--- COMPLETE. {count} PREMIUM PINS SAVED IN {OUTPUT_DIR} ---")
