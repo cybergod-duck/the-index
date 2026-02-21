@@ -11,7 +11,7 @@ OUTPUT_DIR = os.path.join(BASE_DIR, 'public')
 CSV_FILE = os.path.join(BASE_DIR, 'data.csv')
 VAULT_FILE = os.path.join(BASE_DIR, 'the-vault.txt')
 # Placeholder for HighLevel once approved. Currently systeme.io
-AFFILIATE_LINK = "/go/partner" 
+AFFILIATE_LINK = "https://www.gohighlevel.com/?fp_ref=vx8w6" 
 CURRENT_YEAR = "2026"
 DATE_NOW = datetime.now().strftime("%Y-%m-%d")
 
