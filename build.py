@@ -159,33 +159,16 @@ if __name__ == "__main__":
 
     links = []
     
-    # 1. INGEST DATA.CSV
+    # 1. INGEST DATA.CSV (Now contains all 2500+ rows)
     try:
         with open(CSV_FILE, newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
                 if row['industry'] and row['slug']:
                     links.append(create_page(row))
-        print("Ingested data.csv")
+        print(f"Ingested {len(links)} rows from data.csv")
     except FileNotFoundError:
         print(f"WARNING: Could not find {CSV_FILE}")
-
-    # 2. INGEST THE-VAULT.TXT (MASSIVE EXPANSION)
-    try:
-        with open(VAULT_FILE, 'r', encoding='utf-8') as f:
-            for line in f:
-                parts = line.strip().split(',')
-                if len(parts) >= 3:
-                    row = {
-                        'industry': parts[0].strip(),
-                        'pain_point': parts[1].strip(),
-                        'slug': parts[2].strip()
-                    }
-                    if row['industry'] and row['slug']:
-                        links.append(create_page(row))
-        print("Ingested the-vault.txt")
-    except FileNotFoundError:
-        print(f"WARNING: Could not find {VAULT_FILE}")
 
     # GENERATE MASTER INDEX PAGE
     index_schema = {
