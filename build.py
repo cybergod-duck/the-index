@@ -90,7 +90,10 @@ def create_page(row):
         <title>{title}</title>
         <meta name="description" content="{desc}">
         <link rel="canonical" href="https://www.crmindex.net/{slug}/">
-        <link rel="icon" type="image/png" href="/favicon.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
         {PINTEREST_TAG}
         {generate_schema(title, desc, slug)}
         {css_style}
@@ -143,20 +146,14 @@ if __name__ == "__main__":
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
     
-    # SEARCH FOR FAVICON
-    icon_source = None
-    possible_names = ['favicon.png', 'favicon.png.png']
-    
-    for name in possible_names:
-        candidate = os.path.join(BASE_DIR, name)
-        if os.path.exists(candidate):
-            icon_source = candidate
-            print(f"FOUND FAVICON: {name}")
-            break
-            
-    if icon_source:
-        shutil.copy(icon_source, os.path.join(OUTPUT_DIR, 'favicon.png'))
-        print("Favicon injected successfully.")
+    # COPY NEW FAVICON FILES
+    favicon_dir = os.path.join(BASE_DIR, 'favicon_io')
+    if os.path.exists(favicon_dir):
+        for f_name in os.listdir(favicon_dir):
+            f_path = os.path.join(favicon_dir, f_name)
+            if os.path.isfile(f_path):
+                shutil.copy(f_path, os.path.join(OUTPUT_DIR, f_name))
+        print("Favicons injected successfully.")
 
     links = []
     
@@ -192,7 +189,10 @@ if __name__ == "__main__":
         <title>CRM Index - Enterprise Automation Architectures</title>
         <meta name="description" content="Deploy customized, high-ticket CRM operating systems designed to scale your specific business vertical.">
         <link rel="canonical" href="https://www.crmindex.net/">
-        <link rel="icon" type="image/png" href="/favicon.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
         {PINTEREST_TAG}
         <script type="application/ld+json">{json.dumps(index_schema)}</script>
         {css_style}
@@ -229,7 +229,10 @@ if __name__ == "__main__":
         <title>Privacy Policy - CRM Index</title>
         <meta name="description" content="Privacy Policy for CRM Index Enterprise Solutions.">
         <link rel="canonical" href="https://www.crmindex.net/privacy/">
-        <link rel="icon" type="image/png" href="/favicon.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
         {PINTEREST_TAG}
         {css_style}
     </head>
