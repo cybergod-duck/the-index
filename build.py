@@ -217,6 +217,56 @@ if __name__ == "__main__":
     with open(os.path.join(OUTPUT_DIR, 'index.html'), 'w', encoding='utf-8') as f:
         f.write(index_html)
 
+    # PRIVACY POLICY PAGE
+    privacy_html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Privacy Policy - CRM Index</title>
+        <meta name="description" content="Privacy Policy for CRM Index Enterprise Solutions.">
+        <link rel="icon" type="image/png" href="/favicon.png">
+        {PINTEREST_TAG}
+        {css_style}
+    </head>
+    <body>
+        <div class="container">
+            <div class="card">
+                <div class="nav"><a href="/">CRM INDEX</a> / PRIVACY POLICY</div>
+                <h1>Privacy Policy</h1>
+                <p><strong>Effective Date:</strong> January 1, {CURRENT_YEAR}</p>
+
+                <h2>Information We Collect</h2>
+                <p>CRM Index Enterprise Solutions ("we", "us") operates the website crmindex.net. We respect your privacy and are committed to protecting any information you share with us. We may collect standard web analytics data including pages visited, referring URLs, browser type, and IP address through standard server logs.</p>
+
+                <h2>Cookies &amp; Tracking</h2>
+                <p>Our site may use cookies and similar technologies for analytics purposes. Third-party services embedded on our site (such as affiliate partner platforms) may also set cookies. You can control cookie preferences through your browser settings.</p>
+
+                <h2>Affiliate Disclosure</h2>
+                <p>Some links on this site are affiliate links. This means we may earn a commission if you click through and make a purchase. This does not affect the price you pay or our editorial recommendations. We only recommend platforms we have thoroughly evaluated.</p>
+
+                <h2>Third-Party Links</h2>
+                <p>Our site contains links to third-party websites. We are not responsible for the privacy practices or content of those external sites. We encourage you to review their privacy policies before providing any personal information.</p>
+
+                <h2>Data Security</h2>
+                <p>We implement reasonable security measures to protect any information collected. However, no method of electronic transmission or storage is 100% secure.</p>
+
+                <h2>Contact</h2>
+                <p>For questions about this privacy policy, contact us at <strong>info@crmindex.net</strong>.</p>
+
+                <div class="meta">© {CURRENT_YEAR} CRM Index Enterprise Solutions. Architecting the future of automation.</div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    privacy_dir = os.path.join(OUTPUT_DIR, 'privacy')
+    os.makedirs(privacy_dir, exist_ok=True)
+    with open(os.path.join(privacy_dir, 'index.html'), 'w', encoding='utf-8') as f:
+        f.write(privacy_html)
+    print("Privacy policy page generated.")
+
     # Answer Engine Optimization (AEO) Additions
     llms_txt = """# CRM Index - Enterprise Automation Architectures
 
