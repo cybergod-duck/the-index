@@ -192,7 +192,7 @@ if __name__ == "__main__":
         <meta name="description" content="Deploy customized, high-ticket CRM operating systems designed to scale your specific business vertical.">
         <link rel="icon" type="image/png" href="/favicon.png">
         {PINTEREST_TAG}
-        <script type="application/ld+json">{{json.dumps(index_schema)}}</script>
+        <script type="application/ld+json">{json.dumps(index_schema)}</script>
         {css_style}
     </head>
     <body>
