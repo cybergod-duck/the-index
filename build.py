@@ -8,7 +8,7 @@ from datetime import datetime
 # CONFIGURATION
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(BASE_DIR, 'public')
-CSV_FILE = os.path.join(BASE_DIR, 'data.csv')
+CSV_FILE = os.path.join(BASE_DIR, 'data_dir', 'data.csv')
 VAULT_FILE = os.path.join(BASE_DIR, 'the-vault.txt')
 # Placeholder for HighLevel once approved. Currently systeme.io
 AFFILIATE_LINK = "https://www.gohighlevel.com/?fp_ref=crmindex"  

@@ -23,9 +23,9 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 console = Console()
 
 # --- CONFIG ---
-BASE_DIR = Path(r'C:\Projects\the-index')
-CSV_FILE = BASE_DIR / 'data.csv'
-STATE_FILE = BASE_DIR / 'posted_state.json'
+BASE_DIR = Path(__file__).resolve().parent
+CSV_FILE = BASE_DIR / 'data_dir' / 'data.csv'
+STATE_FILE = BASE_DIR / 'state' / 'posted_state.json'
 PROFILE_DIR = BASE_DIR / 'chrome_profile_final'
 PIN_DIR = BASE_DIR / 'premium_pins'
 
@@ -220,6 +220,9 @@ def main():
             
         # Refill the pin queue automatically so there are always graphics ready for the next execution
         console.print("\n[bold cyan]--- INITIATING BACKGROUND PIN BATCH-GENERATION ---[/bold cyan]")
+        import sys
+        sys.path.append(str(BASE_DIR))
+        from premium_pin_generator import generate_batch
         generate_batch(150)
 
 if __name__ == "__main__":

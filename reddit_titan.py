@@ -13,9 +13,9 @@ from rich.panel import Panel
 
 console = Console()
 
-BASE_DIR = Path(r'C:\Projects\the-index')
-CSV_FILE = BASE_DIR / 'data.csv'
-STATE_FILE = BASE_DIR / 'reddit_state.json'
+BASE_DIR = Path(__file__).resolve().parent
+CSV_FILE = BASE_DIR / 'data_dir' / 'data.csv'
+STATE_FILE = BASE_DIR / 'state' / 'reddit_state.json'
 PROFILE_DIR = BASE_DIR / 'chrome_profile_final'
 
 def load_state():
