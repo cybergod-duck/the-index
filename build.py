@@ -89,6 +89,7 @@ def create_page(row):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{title}</title>
         <meta name="description" content="{desc}">
+        <link rel="canonical" href="https://www.crmindex.net/{slug}/">
         <link rel="icon" type="image/png" href="/favicon.png">
         {PINTEREST_TAG}
         {generate_schema(title, desc, slug)}
@@ -190,6 +191,7 @@ if __name__ == "__main__":
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>CRM Index - Enterprise Automation Architectures</title>
         <meta name="description" content="Deploy customized, high-ticket CRM operating systems designed to scale your specific business vertical.">
+        <link rel="canonical" href="https://www.crmindex.net/">
         <link rel="icon" type="image/png" href="/favicon.png">
         {PINTEREST_TAG}
         <script type="application/ld+json">{json.dumps(index_schema)}</script>
@@ -226,6 +228,7 @@ if __name__ == "__main__":
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Privacy Policy - CRM Index</title>
         <meta name="description" content="Privacy Policy for CRM Index Enterprise Solutions.">
+        <link rel="canonical" href="https://www.crmindex.net/privacy/">
         <link rel="icon" type="image/png" href="/favicon.png">
         {PINTEREST_TAG}
         {css_style}
