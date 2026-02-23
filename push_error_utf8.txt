@@ -1,0 +1,48 @@
+﻿git : remote: error: 
+Trace: e121cf9e67295a01
+dba7a99371c26437cf9641a
+874954a202a4b7bd19f82b4
+ea        
+At line:1 char:1
++ git push origin main 
+> push_error.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (remote: error   
+ : ...f82b4ea          
+  :String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+remote: error: See 
+https://gh.io/lfs for 
+more information.      
+  
+remote: error: File chr
+ome_profile_final/Defau
+lt/Cache/Cache_Data/dat
+a_3 is 116.01 MB; this 
+exceeds GitHub's file 
+size limit of 100.00 
+MB        
+remote: error: GH001: 
+Large files detected. 
+You may want to try 
+Git Large File Storage 
+- https://git-lfs.githu
+b.com.        
+To https://github.com/c
+ybergod-duck/the-index.
+git
+ ! [remote rejected]   
+main -> main 
+(pre-receive hook 
+declined)
+error: failed to push 
+some refs to 'https://g
+ithub.com/cybergod-duck
+/the-index.git'
